@@ -1,162 +1,152 @@
-import time
-import os
+try:  # Maya 2016
+    from PySide.QtCore import *
+    from PySide.QtGui import *
+except ImportError:
+    try:  # Maya 2017
+        from PySide2.QtCore import *
+        from PySide2.QtGui import *
+        from PySide2.QtWidgets import *
+    except ImportError:
+        print "PySide import ERROR"
+
+from widgets import *
+from simbatch.core.queue import QueueItem
 
 
-class SimBatchServer:
-    timerDelaySeconds = 3   # delay for each loop execution
-    loopsLimit = 0          # 0 infinite loop
-    loops_counter = 0        # total loop executions
-
-    dbMode = 1    # 0 debug OFF    1 debug ON
-    runExecutorState = 0  # 0 idle   1 something to do     2 runnning      9 err
-    current_simnode_state = None
-    # 23 OFFLINE   8 off(HOLD)  2(WAITING)  20 server executor(ACTIVE)  4 proces run  (WORKING)  11 process done  9 err
-
+class AddToQueueForm (QWidget):
     batch = None
-    forceSoftware = 0
-    server_name = "SimNode_01"   # TODO  custom name on init
-    server_dir = ""
-    state_file_name = "state.txt"
-    log_file_name = "log.txt"
-    script_execute = "script_execute.py"
+    form_atq_local_item = None    # obsolete
+    options = []                  # all inputted user's options with parameters
 
+    qt_edit_button_frame_from = None
+    qt_edit_button_frame_to = None
+    qt_edit_button_sim_from = None
+    qt_edit_button_sim_to = None
+    qt_edit_button_version = None
+    qt_edit_button_prior = None
+    qt_gb_add_to_queue_now = None
+    qt_lay_actions = None
+
+    qt_edit_button_description = None
+    FoQuWiEvolve = None
+    execute_button = None
+
+    actions_widgets_array = []
+    form_actions_count = 0
+
+    all_actions_array = []
+    comfun = None
+    
+    
     def __init__(self, batch):
+        QWidget.__init__(self)
         self.batch = batch
-        self.batch.que.load_queue()
-        if self.batch.que.total_queue_items == 0:
-            self.batch.logger.err("queue data is empty, nothing loaded")
-            self.batch.que.print_header()
+        self.form_atq_local_item = self.batch.que.get_blank_queue_item()
+        # self.sts = self.batch.sts
+        # self.comfun = self.batch.comfun
+        self.init_ui_elements()
 
-        self.server_dir = os.path.dirname(os.path.realpath(__file__)) + self.batch.sts.dir_separator
-        self.test_server_dir()
+    def init_ui_elements(self):
+        qt_form_add_layout = QVBoxLayout()
 
-        self.current_simnode_state = self.batch.nod.get_node_state(self.server_dir + self.state_file_name)
-        if self.current_simnode_state == -1:
-            simnode_state_file = self.server_dir + self.state_file_name
-            simnode_state_data = "{};{};{}".format(2, self.server_name, self.get_date())
-            self.batch.comfun.save_to_file(simnode_state_file, simnode_state_data)
-            self.set_simnode_state(2)
-        self.batch.logger.inf(("init server", self.server_dir))
+        # qt_action_empty = ActionWidget(None, label_txt="    Select Task")
+        qt_lay_actions = QVBoxLayout()
+        self.qt_lay_actions = qt_lay_actions
+        # qt_lay_actions.addWidget(qt_action_empty)
+        qt_lay_actions.setSpacing(0)
+        qt_lay_actions.setContentsMargins(0, 0, 0, 0)
+        qt_gb_actions = QGroupBox()
+        qt_gb_actions.setTitle("Actions")
+        qt_gb_actions.setLayout(qt_lay_actions)
+        qt_form_add_layout.addWidget(qt_gb_actions)
 
-    def test_server_dir(self):
-        # TODO tesdt write acces   create data dir
-        pass
+        qt_edit_button_version = EditLineWithButtons("version")
+        qt_edit_button_prior = EditLineWithButtons("prior")
+        qt_edit_button_sim_from = EditLineWithButtons("sim from")
+        qt_edit_button_sim_to = EditLineWithButtons("sim to")
+        qt_edit_button_frame_from = EditLineWithButtons("start")
+        qt_edit_button_frame_to = EditLineWithButtons("end")
 
-    def get_date(self):  # TODO move to common
-        return time.strftime("%Y-%m-%d_%H:%M:%S")
+        qt_edit_button_description = EditLineWithButtons("desc", label_minimum_size=60)
 
-    def set_simnode_state(self, state):
-        file = self.server_dir + self.state_file_name
-        self.batch.nod.set_node_state(file, self.server_name, state)
+        qt_button_cb_add_to_queue = ButtonWithCheckBoxes("Add To Queue Now!", label_text="  pin ?  ")
+        
+        
+        qt_widget_group_frame_range = WidgetGroup(
+            [qt_edit_button_version, qt_edit_button_prior, qt_edit_button_sim_from, qt_edit_button_sim_to,
+             qt_edit_button_frame_from, qt_edit_button_frame_to])
 
-    def add_to_log(self, info, log_file=None):   # TODO move to common
-        date = self.get_date()
-        if log_file == None:
-            log_file = self.server_dir + self.log_file_name
-        f = open(log_file, 'a')
-        f.write(date + info + '; \n')
-        f.close()
-        self.batch.logger.log(info)
+        qt_form_add_layout.addLayout(qt_widget_group_frame_range.qt_widget_layout)
+        qt_form_add_layout.addLayout(qt_edit_button_description.qt_widget_layout)
+        qt_form_add_layout.addLayout(qt_button_cb_add_to_queue.qt_widget_layout)
 
-    def set_state(self, queue_id, state, state_id, server_name, with_save=True, add_current_time=False, set_time=""):
-        self.batch.logger.db(("set_state: ", state, state_id, server_name))
-        self.batch.que.clear_all_queue_items()  # TODO  check REFERS IF LOCAL !!!!
-        self.batch.que.load_queue()
-        self.batch.que.update_current_from_id(queue_id)
-        self.batch.que.update_state_and_node(queue_id, state, state_id, server_name=server_name, server_id=1,
-                                             set_time=set_time, add_current_time = add_current_time )
+        qt_gb_atq = QGroupBox()
+        # qt_gb_atq.setLayout(qt_form_add_layout)
+        self.qt_gb_add_to_queue_now = qt_gb_atq
+        qt_form_add_layout.addWidget(qt_gb_atq)
 
-        if self.batch.que.current_queue_index is not None:
-            qin = self.batch.que.current_queue.queue_item_name
-            self.add_to_log(" state:{}   id:{}    qin:{}   by server:{}".format(state, self.batch.que.current_queue_id,
-                                                                                qin, self.server_name))
+        self.qt_edit_button_sim_from = qt_edit_button_sim_from
+        self.qt_edit_button_sim_to = qt_edit_button_sim_to
+        self.qt_edit_button_frame_from = qt_edit_button_frame_from
+        self.qt_edit_button_frame_to = qt_edit_button_frame_to
+        self.qt_edit_button_prior = qt_edit_button_prior
+        self.qt_edit_button_version = qt_edit_button_version
+        self.qt_edit_button_description = qt_edit_button_description
+        self.execute_button = qt_button_cb_add_to_queue.button
+
+        self.setLayout(qt_form_add_layout)
+        # qt_edit_button_sim_from.qt_edit_line.textChanged.connect(self.on_change_sim_from)
+        # qt_edit_button_sim_to.qt_edit_line.textChanged.connect(self.on_change_sim_to)
+        # qt_edit_button_frame_from.qt_edit_line.textChanged.connect(self.on_change_render_from)
+        # qt_edit_button_frame_to.qt_edit_line.textChanged.connect(self.on_change_render_to)
+        
+
+    def update_add_ui(self):
+        current_task = self.batch.tsk.current_task
+        self.qt_edit_button_sim_from.qt_edit_line.setText(str(current_task.sim_frame_start))
+        self.qt_edit_button_sim_to.qt_edit_line.setText(str(current_task.sim_frame_end))
+        self.qt_edit_button_frame_from.qt_edit_line.setText(str(current_task.prev_frame_start))
+        self.qt_edit_button_frame_to.qt_edit_line.setText(str(current_task.prev_frame_end))
+        self.qt_edit_button_prior.qt_edit_line.setText(str(current_task.priority))
+        self.qt_edit_button_version.qt_edit_line.setText(str(current_task.task_ver))
+        self.qt_edit_button_description.qt_edit_line.setText(current_task.description)
+
+        self.remove_all_action_widgets()
+        current_sch = self.batch.sch.get_schema_by_id(current_task.schema_id)
+        for act in current_sch.actions_array:
+            # gen_script  = action.generate_script ( action.scriptActionTemplates, vals, subType ) 
+            
+            self.add_action_widget_to_form(act.name, act.actual_value+"mmm")
+
+    def add_action_widget_to_form(self, info, edit_txt=None, evo=None):
+        if edit_txt is None and evo is None:
+            wi = SimpleLabel(info)
         else:
-            self.add_to_log(" state:{}   id:{}   by server:{}".format(state, self.batch.que.current_queue_id,
-                                                                      self.server_name))
-        if with_save == True:
-            self.batch.que.save_queue()
-
-    def set_working(self, queue_id, server_name, with_save=True):  # setStatus
-        self.set_state(queue_id, "WORKING", 4, server_name, with_save=with_save, add_current_time=True)
-
-    def set_done(self, queue_id, server_name, with_save=True, set_time=""):  # setStatus
-        self.set_state(queue_id, "DONE", 11, server_name, with_save=with_save, set_time=set_time)
-
-    def set_error(self, queue_id, server_name, with_save = True):  # setStatus
-        self.set_state(queue_id, "ERR", 9, server_name, with_save = with_save, add_current_time=True)
-
-
-    def generate_script_for_external_software(self, pyFile, jobScript, jobDescription, jobID, local=False):
-        scritp_out = "'''   create time: "+self.get_date()+"   '''\n'''   create node: "+self.server_name+"   '''\n\n"
-        scritp_out += "\n# sys append script dir    " + self.server_dir   # TODO sys append script dir
-        scritp_out += "\nfrom SimBatch_executor import * \nSiBe = SimBatchExecutor(1, "+str(jobID)+" ) "  # TODO 1: id
-        scritp_out += "\nSiBe.addToLogWithNewLine( \"Soft START:"+jobDescription+"\" )  \n"    # TODO Soft + format + PEP
-
-        script_lines = jobScript.split("|")
-        for li in script_lines :
-            li_slash = li.replace('\\', '\\\\')
-            scritp_out += li_slash + "\n"
-
-        scritp_out+="\nSiBe.finalizeQueueJob()\n"
-
-        self.batch.comfun.save_to_file( pyFile, scritp_out)
-        return scritp_out
-
-    def is_something_to_do(self, force_software=0):
-        ret = self.batch.que.get_first_with_state_id(2, soft=force_software)  # TODO cnst state from settings
-        if ret[0] >= 0:
-            queue_item = self.batch.que.queue_data[ret[0]]
-            script = queue_item.evolution_script
-            soft_id = queue_item.soft_id
-            info = " id:{}  evo:{}  descr:{}".format(ret[1], queue_item.evolution, queue_item.description)
-            self.batch.logger.db(("there is_something_to_do: ", ret[0], ret[1], force_software))
-            return 1, ret[0], ret[1], script, soft_id, info
-        else:
-            return 0, None, None, None, None, None    # bool, index, id, script, soft_id  # TODO class
-
-    def run(self):
-
-        ############   MAIN EXECUTION LOOP    ##########
-
-        self.loops_counter += 1
-        if self.loops_counter <= self.loopsLimit or self.loopsLimit < 1:
-            if self.loopsLimit > 0:
-                self.batch.logger.db((self.get_date(), "loop:", self.loops_counter))
+            if evo is not None:
+                wi = EditLineWithButtons(info, edit_txt)
             else:
-                self.batch.logger.db(self.get_date())
-        self.current_simnode_state = self.batch.nod.get_node_state(self.server_dir + self.state_file_name)
+                print "\n\n zzzz wiii .... ", evo
+                # wi = ActionWidgetATQ()
+                wi = EditLineWithButtons("xEVOx_"+info, edit_txt)
+        qt_widget = QWidget()
+        qt_widget.setLayout(wi.qt_widget_layout)
+        self.qt_lay_actions.addWidget(qt_widget)
+        # self.qt_lay_actions.addLayout(wi.qt_widget_layout)
 
-        if self.current_simnode_state == 9:
-            self.batch.logger.err("file state not exist")
-            self.batch.logger.log(("file state not exist", self.server_dir, self.state_file_name))
+    def remove_all_action_widgets(self):
+        # self.actionsWidgetasArray = []
+        # self.actionsAllArray = []
+        while self.qt_lay_actions.count() > 0:
+            b = self.qt_lay_actions.itemAt(0)
+            b.widget().deleteLater()
+            # b.deleteLater()
+            self.qt_lay_actions.takeAt(0)
+        # self.actionsCount = 0
 
-        if self.current_simnode_state == 8 or self.current_simnode_state == 2:  # 2  server run (WAITING or HOLD)
-            if self.current_simnode_state == 8:  # 8 off(HOLD)
-                self.current_simnode_state = 2
-                self.set_simnode_state(2)
-            self.batch.que.clear_all_queue_items()
-            self.batch.que.load_queue()
-
-        # is_something_to_compute = self.isSomethingToDo(forceSoftware=self.forceSoftware)
-        is_something_to_compute = self.is_something_to_do()
-        print "\n [db1] is_something_to_compute  ", is_something_to_compute  # TODO
-        self.batch.logger.db(("is_something_to_compute", is_something_to_compute))
-        if is_something_to_compute[0] == 1:
-            execute_queue_index = is_something_to_compute[1]   #  TODO   ret check and  del     job_to_compute
-            execute_queue_id = is_something_to_compute[2]   #  TODO   ret check and  del
-
-            ret = self.batch.que.update_current_from_id(execute_queue_id)
-            if ret is False:
-                self.batch.logger.db(("queue item state not updated, id:", execute_queue_id))
-
-            # set node state
-            self.set_simnode_state(20)
-            # set queue item state
-            self.set_working(execute_queue_id, "local", "self.serverID TODO")
-
-            job_id = is_something_to_compute[2]
-            job_script = is_something_to_compute[3]
-            job_description = is_something_to_compute[5]
-
-            generate_script_file = self.server_dir + self.script_execute
-            self.generate_script_for_external_software(generate_script_file, job_script, job_description, job_id, local = True)
+    def create_directories(self):
+        # TODO
+        return True
+        
+        
+        
+        
