@@ -1,5 +1,6 @@
 # import copy
 import subprocess
+import simbatch.server.server as simbatch_server
 
 try:  # Maya 2016
     from PySide.QtCore import *
@@ -14,7 +15,6 @@ except ImportError:
 
 from widgets import *
 # from simbatch.core.queue import *
-
 
 class QueueListItem(QWidget):
     def __init__(self, txt_id, txt_name, txt_user, txt_prior, txt_state, txt_evo, txt_node, txt_desc):
@@ -115,6 +115,7 @@ class QueueUI:
         self.top_ui = top
         self.mainw = mainw
 
+
         list_queue = QListWidget()
         list_queue.setSelectionMode(QAbstractItemView.NoSelection)
 
@@ -147,6 +148,7 @@ class QueueUI:
         qt_form_edit.setLayout(qt_form_edit_layout_ext)
 
         qt_form_edit_layout = QVBoxLayout()
+
 
         # fe   form edit
         qt_edit_button_fe_name = EditLineWithButtons("Queue item name: ")
@@ -184,6 +186,7 @@ class QueueUI:
 
         qt_form_remove_layout = QFormLayout()
 
+
         qt_cb_button_remove = ButtonWithCheckBoxes("Yes, remove", label_text="Remove selected ?        ")
 
         qt_form_remove_layout.addRow(" ", QLabel("   "))
@@ -215,7 +218,8 @@ class QueueUI:
         self.comfun.add_layouts(qt_lay_queue_main, [qt_lay_queue_list, qt_lay_forms, qt_lay_queue_buttons])
 
         self.init_queue_items()
-
+        
+  
     def init_queue_items(self):
         widget_list = self.list_queue
         qt_list_item = QListWidgetItem(widget_list)
@@ -243,14 +247,16 @@ class QueueUI:
             widget_list.setItemWidget(qt_list_item, list_item_widget)
             qt_list_item.setSizeHint(QSize(130, 26))
             qt_list_item.setBackground(self.sts.state_colors[que.state_id])
-
+            
+       
     def reset_list(self):
         self.freeze_list_on_changed = 1
         index = self.batch.que.current_queue_index
         self.clear_list(with_freeze=False)
         self.init_queue_items()
-        self.batch.que.current_queue_index = index
-        self.batch.que.current_queue_id = self.batch.que.queue_data[self.batch.que.current_queue_index].id
+        if index is not None:
+            self.batch.que.current_queue_index = index
+            self.batch.que.current_queue_id = self.batch.que.queue_data[self.batch.que.current_queue_index].id
         self.freeze_list_on_changed = 0
 
     def update_all_queue(self):
@@ -258,12 +264,13 @@ class QueueUI:
         self.init_queue_items()
         self.update_list_of_visible_ids()
 
-    def reload_tasks_data_and_refresh_list(self):
+    def reload_queue_data_and_refresh_list(self):
         self.batch.que.clear_all_queue_items()
         self.batch.que.load_queue()
         self.reset_list()
-        self.update_list_of_visible_ids()
-
+        self.update_list_of_visible_ids()     
+            
+   
     def _change_current_queue_item_state_and_reset_list(self, state_id):
         self.batch.que.current_queue.state = self.sts.states_visible_names[state_id]
         self.batch.que.current_queue.state_id = state_id
@@ -273,6 +280,9 @@ class QueueUI:
     def on_click_menu_set_init(self):
         self._change_current_queue_item_state_and_reset_list(self.sts.INDEX_STATE_INIT)
 
+    def on_click_menu_set_waiting(self):
+        self._change_current_queue_item_state_and_reset_list(self.sts.INDEX_STATE_WAITING)
+
     def on_click_menu_set_working(self):
         self._change_current_queue_item_state_and_reset_list(self.sts.INDEX_STATE_WORKING)
 
@@ -281,7 +291,9 @@ class QueueUI:
 
     def on_click_menu_set_hold(self):
         self._change_current_queue_item_state_and_reset_list(self.sts.INDEX_STATE_HOLD)
-
+        
+        
+    
     def on_menu_locate_prev(self):
         cur_queue_item = self.batch.que.queue_data[self.batch.que.current_queue_index]
         proj_id = cur_queue_item.proj_id
@@ -317,7 +329,8 @@ class QueueUI:
 
     def on_click_menu_queue_item_remove(self):
         self.remove_queue_item()
-
+        
+   
     @staticmethod
     def on_click_menu_spacer():
         pass
@@ -325,7 +338,8 @@ class QueueUI:
     def on_right_click_show_menu(self, pos):
         global_cursor_pos = self.list_queue.mapToGlobal(pos)
         qt_right_menu = QMenu()
-        qt_right_menu.addAction("Set INIT", self.on_click_menu_set_init)
+        # qt_right_menu.addAction("Set INIT", self.on_click_menu_set_init)
+        qt_right_menu.addAction("Set WAITING", self.on_click_menu_set_waiting)
         qt_right_menu.addAction("Set WORKING", self.on_click_menu_set_working)
         qt_right_menu.addAction("Set DONE", self.on_click_menu_set_done)
         qt_right_menu.addAction("Set HOLD", self.on_click_menu_set_hold)
@@ -341,12 +355,30 @@ class QueueUI:
         self.qt_form_remove.hide()
         self.edit_form_state = 0
         self.remove_form_state = 0
+        
+     
+    def run_server_from_framework(self, loops=0):
+        server = simbatch_server.SimBatchServer(self.batch, force_local=True)
+        server.loopsLimit = loops
+        server.timerDelaySeconds = 0 
+        server.reset_report()
+        server.run() 
+        report = server.generate_report()
+        if report[0] > 0:
+            self.reload_queue_data_and_refresh_list()
+            if report[0] == 1:
+                self.top_ui.set_top_info(server.last_info, 1)
+            else:
+                self.top_ui.set_top_info(("total computed:", report[0], "   last", server.last_info), 6)
+        else:
+            if len(server.last_info)>0:
+                self.top_ui.set_top_info(server.last_info, 1)
 
     def on_click_sim_one(self):
-        pass
+        self.run_server_from_framework(loops=1)
 
     def on_click_sim_all(self):
-        pass
+        self.run_server_from_framework()
 
     def on_click_edit(self):
         if self.edit_form_state == 0:
@@ -357,7 +389,8 @@ class QueueUI:
         else:
             self.qt_form_edit.hide()
             self.edit_form_state = 0
-
+            
+        
     def on_click_form_edit_fill(self):
         if self.batch.que.current_queue_index >= 0:
             curr_queue_item = self.batch.que.queue_data[self.batch.que.current_queue_index]
@@ -384,8 +417,11 @@ class QueueUI:
         qt_list_item.setSizeHint(QSize(1, 24))
 
     # def add_to_queue_and_update_list(self, form_atq):
-    #     pass      TODO cleanup
-
+    #     pass      TODO cleanup   
+            
+            
+            
+     
     def on_click_save_changes(self, updated_queue_name, updated_prior, updated_state, updated_description):
         pass
 
@@ -395,7 +431,8 @@ class QueueUI:
     def remove_queue_item(self):
         if self.current_list_item_index >= 0:
             take_item_list = self.current_list_item_index + 1
-            self.batch.que.remove_single_queue_item(index=self.batch.que.current_queue_index, do_save=True)
+            ret = self.batch.que.remove_single_queue_item(index=self.batch.que.current_queue_index, do_save=True)
+            print "rem ret  : " , ret
             self.last_list_item_index = None
             self.batch.que.current_queue_index = None
             self.current_list_item_index = None
@@ -408,6 +445,7 @@ class QueueUI:
     def on_click_confirmed_remove_queue_item(self):
         self.batch.logger.db(("remove_queue_item", self.batch.que.current_queue_index,
                               self.current_list_item_index))
+        self.remove_queue_item()
 
     def clear_list(self, with_freeze=True):
         if with_freeze:
@@ -415,7 +453,8 @@ class QueueUI:
         while self.list_queue.count() > 0:
             self.list_queue.takeItem(0)
         if with_freeze:
-            self.freeze_list_on_changed = 0
+            self.freeze_list_on_changed = 0  
+            
 
     def update_list_of_visible_ids(self):
         array_visible_queue_items_ids = []
@@ -424,7 +463,7 @@ class QueueUI:
                 array_visible_queue_items_ids.append(que.id)
         self.array_visible_queue_items_ids = array_visible_queue_items_ids
 
-    def on_current_item_changed(self, current_queue_item):
+    def on_current_item_changed(self, current_queue_item):   #  current_queue
         if self.freeze_list_on_changed == 1:   # freeze update changes on massive action    i.e  clear_list()
             self.batch.logger.deepdb(("que chngd freeze_list_on_changed", self.list_queue.currentRow()))
         else:
@@ -448,7 +487,8 @@ class QueueUI:
                                                                                        len(self.batch.tsk.tasks_data)))
             else:
                 self.batch.logger.db("last_task_list_index is None")
-
+            
+        
             if len(self.array_visible_queue_items_ids) <= current_list_index:
                 self.update_list_of_visible_ids()  # TODO move  to init / change list
                 if len(self.array_visible_queue_items_ids) > current_list_index:
@@ -464,10 +504,13 @@ class QueueUI:
                 current_queue_item_id = self.array_visible_queue_items_ids[current_list_index]
                 self.batch.que.current_queue_id = current_queue_item_id
                 self.batch.que.update_current_from_id(current_queue_item_id)
-            else:
-                self.batch.logger.err(("Wrong current_list_index: ", current_list_index,
-                                       " or array_visible_queue_items_ids", len(self.array_visible_queue_items_ids)))
-
+            else: 
+                self.batch.logger.err (("Wrong current_list_index: ", current_list_index, " or array_visible_queue_items_ids",
+                                        len(self.array_visible_queue_items_ids) ))
+                
+                
+                
+            
             current_queue_index = self.batch.que.current_queue_index
             if 0 <= current_queue_index < len(self.batch.que.queue_data):
                 cur_queue = self.batch.que.queue_data[current_queue_index]
@@ -487,3 +530,56 @@ class QueueUI:
             else:
                 self.batch.logger.err("on chng list que {} < {}".format(current_queue_index,
                                                                         len(self.batch.que.queue_data)))
+    
+        
+        
+            
+            
+            
+            
+        
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
