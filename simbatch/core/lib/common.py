@@ -136,19 +136,21 @@ class CommonFunctions:
             else:
                 return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    @staticmethod
-    def format_seconds_to_string(seconds):
-        if seconds < 60:
-            return str(int(seconds)) + "s"
-        elif seconds < 3600:
-            return "{:.1f}m".format(1.0 * seconds / 60)
+    def format_seconds_to_string(self,seconds):
+        if self.is_int(seconds):
+            if seconds < 60:
+                return str(int(seconds)) + "s"
+            elif seconds < 3600:
+                return "{:.1f}m".format(1.0 * seconds / 60)
+            else:
+                return "{:.1f}h".format(1.0 * seconds / 3600)
         else:
-            return "{:.1f}h".format(1.0 * seconds / 3600)
+            return "NaN"
 
     # files and directories ...
     @staticmethod
     def current_scripts_path():
-        return path.dirname(path.realpath(sys.argv[0])) + "\\"
+        return path.dirname(path.realpath(sys.argv[0])) + "\\"     # TODO  OS !
 
     def file_exists(self, check_file, info="", check_not_empty=False):
         if path.exists(check_file):
@@ -162,10 +164,11 @@ class CommonFunctions:
                 return True
         else:
             if len(check_file) > 0:
-                if len(info) > 0:
-                    self.logger.wrn("File {} not exist !  ({})\n".format(check_file, info))
-                else:
-                    self.logger.wrn("File {} not exist !\n".format(check_file))
+                if info is not False:
+                    if len(info) > 0:
+                        self.logger.wrn("File {} not exist !  ({})\n".format(check_file, info))
+                    else:
+                        self.logger.wrn("File {} not exist !\n".format(check_file))
             else:
                 self.logger.err("File name length is zero! {}".format(info))
             return False
