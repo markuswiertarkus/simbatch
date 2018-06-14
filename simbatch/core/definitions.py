@@ -190,6 +190,7 @@ class Definitions:
 
         if self.current_definition_name is None:
             if self.total_definitions > 0:
+                self.current_definition = self.definitions_array[0]
                 self.current_definition_name = self.definitions_names[0]
                 self.current_definition_index = 0
             else:
