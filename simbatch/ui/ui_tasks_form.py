@@ -7,7 +7,7 @@ except ImportError:
         from PySide2.QtGui import *
         from PySide2.QtWidgets import *
     except ImportError:
-        raise Exception('PySide import ERROR!  Please install PySide or PySide2')
+        print "PySide import ERROR"
 
 from widgets import *
 from simbatch.core.queue import QueueItem
@@ -36,7 +36,9 @@ class AddToQueueForm (QWidget):
 
     all_actions_array = []
     comfun = None
-
+    
+    
+    
     def __init__(self, batch):
         QWidget.__init__(self)
         self.batch = batch
@@ -65,7 +67,8 @@ class AddToQueueForm (QWidget):
         qt_edit_button_sim_to = EditLineWithButtons("sim to")
         qt_edit_button_frame_from = EditLineWithButtons("start")
         qt_edit_button_frame_to = EditLineWithButtons("end")
-
+        
+        
         qt_edit_button_description = EditLineWithButtons("desc", label_minimum_size=60)
 
         qt_button_cb_add_to_queue = ButtonWithCheckBoxes("Add To Queue Now!", label_text="  pin ?  ")
@@ -97,7 +100,9 @@ class AddToQueueForm (QWidget):
         # qt_edit_button_sim_to.qt_edit_line.textChanged.connect(self.on_change_sim_to)
         # qt_edit_button_frame_from.qt_edit_line.textChanged.connect(self.on_change_render_from)
         # qt_edit_button_frame_to.qt_edit_line.textChanged.connect(self.on_change_render_to)
-
+        
+    
+    
     def update_add_ui(self):
         current_task = self.batch.tsk.current_task
         self.qt_edit_button_sim_from.qt_edit_line.setText(str(current_task.sim_frame_start))
@@ -111,22 +116,27 @@ class AddToQueueForm (QWidget):
         self.remove_all_action_widgets()
         current_sch = self.batch.sch.get_schema_by_id(current_task.schema_id)
         for act in current_sch.actions_array:
-            self.add_widget_action_to_form(act.name, act.actual_value)
+            # gen_script  = action.generate_script ( action.scriptActionTemplates, vals, subType ) 
+            
+            self.add_action_widget_to_form(act.name, act.actual_value+"mmm")
 
-    def add_widget_action_to_form(self, info, edit_txt=None, evo=None):
+    def add_action_widget_to_form(self, info, edit_txt=None, evo=None):
         if edit_txt is None and evo is None:
             wi = SimpleLabel(info)
         else:
-            if edit_txt is not None:
+            if evo is not None:
                 wi = EditLineWithButtons(info, edit_txt)
             else:
+                print "\n\n zzzz wiii .... ", evo
                 # wi = ActionWidgetATQ()
-                wi = EditLineWithButtons("evo_" + info, edit_txt)  # TODO
+                wi = EditLineWithButtons("xEVOx_"+info, edit_txt)
         qt_widget = QWidget()
         qt_widget.setLayout(wi.qt_widget_layout)
         self.qt_lay_actions.addWidget(qt_widget)
         # self.qt_lay_actions.addLayout(wi.qt_widget_layout)
-
+        
+        
+        
     def remove_all_action_widgets(self):
         # self.actionsWidgetasArray = []
         # self.actionsAllArray = []
@@ -140,3 +150,17 @@ class AddToQueueForm (QWidget):
     def create_directories(self):
         # TODO
         return True
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
