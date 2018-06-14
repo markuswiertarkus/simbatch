@@ -28,8 +28,8 @@ QUEUE_ITEM_FIELDS_NAMES = [
     ('softId', 'soft_id')
     ]
 
-
 class QueueItem:
+
     def __init__(self, queue_item_id, queue_item_name, task_id, user, user_id, sequence, shot, take,
                  frame_from, frame_to, state, state_id, ver, evo, evo_nr, evo_script, prior,
                  description, sim_node, sim_node_id, time, proj_id, soft_id):
@@ -57,7 +57,6 @@ class QueueItem:
         self.proj_id = proj_id   # TODO  change to project_id
         self.soft_id = soft_id
 
-
 class Queue:
     batch = None
     comfun = None
@@ -82,16 +81,16 @@ class Queue:
     #  print project data, mainly for debug
     def print_header(self):
         print "\n QUEUE: "
-        print "     current queue item id: {}   index: {}   total queue items: {}\n".format(self.current_queue_id,
-                                                                                            self.current_queue_index,
-                                                                                            self.total_queue_items)
+        print "     current q: id: {}     index: {}    total_q: {}\n".format(self.current_queue_id,
+                                                                                          self.current_queue_index,
+                                                                                          self.total_queue_items)
 
     def print_current(self):
         print "       current queue index:{}, id:{}, total:{}".format(self.current_queue_index, self.current_queue_id,
                                                                       self.total_queue_items)
         if self.current_queue_index is not None:
             cur_que = self.current_queue
-            print "       current queue name:{}".format(cur_que.queue_item_name)
+            print "       current queue name:{}".format(cur_que.queue_item_name) 
 
     def print_all(self):
         if self.total_queue_items == 0:
@@ -111,7 +110,7 @@ class Queue:
         for i, que in enumerate(self.queue_data):
             if que.id == get_id:
                 return i
-        self.batch.logger.wrn(("(get index by id) no queue item with id: ", get_id))
+        self.batch.logger.wrn(("(get index by ) no queue item with ID: ", get_id))
         return None
 
     def update_current_from_id(self, queue_id):
@@ -134,13 +133,13 @@ class Queue:
             if q.state_id == state_id:
                 if soft > 0:
                     if q.soft_id == soft:
-                        return index, self.queue_data[index].id
+                        return (index, self.queue_data[index].id)
                 else:
-                    return index, self.queue_data[index].id
-        return -1, -1
-
-    def update_state_and_node(self, queue_id, state, state_id, server_name="", server_id=-1, set_time=0,
-                              add_current_time=False):
+                    return (index, self.queue_data[index].id)
+        return (-1, -1)
+    
+   
+    def update_state_and_node(self, queue_id, state, state_id, server_name="", server_id=-1, set_time=0, add_current_time=False):
         for i, q in enumerate(self.queue_data):
             if q.id == queue_id:
                 self.queue_data[i].state = state
@@ -169,6 +168,7 @@ class Queue:
         # PRO VERSION with sql
         return False
 
+
     def clear_all_queue_items(self, clear_stored_data=False):
         del self.queue_data[:]
         self.max_id = 0
@@ -190,6 +190,7 @@ class Queue:
         return True
 
     def add_to_queue(self, queue_items, do_save=False):
+
         last_queue_item_id = None
         for queue_item in queue_items:
             if queue_item.id > 0:
@@ -207,10 +208,11 @@ class Queue:
             else:
                 return False
         return last_queue_item_id
-
+    
+    
     def remove_single_queue_item(self, index=None, queue_id=None, do_save=False):
         if index is None and queue_id is None:
-            self.batch.logger.err("queue item data not removed, skipping, missing index or id")
+            self.batch.logger.err("queue item data not removed, missing index or id")
             return False
         if queue_id > 0:
             for i, que in enumerate(self.queue_data):
@@ -253,7 +255,9 @@ class Queue:
             return new_queue_item    # self.get_blank_queue_item()
         else:
             return None
-
+        
+        
+        
     def generate_queue_items(self, task_id, options=None):
         # TODO   WIP
         queue_items = []
@@ -269,8 +273,7 @@ class Queue:
         return queue_items
 
     def generate_evo_script(self, hymm):
-        self.batch.logger.wrn(" TODO generate_evo_script ")
-        return " eval("+hymm+") ...  WIP  TODO "   # TODO
+        return " eval("+hymm+") ...  WIP  TODO "
 
     # prepare 'queue_data' for backup or save
     def format_queue_data(self, json=False, sql=False, backup=False):
@@ -292,7 +295,10 @@ class Queue:
             else:
                 # PRO version with SQL
                 return False
-
+            
+            
+            
+            
     def create_example_queue_data(self, do_save=True):
         collect_ids = 0
         sample_queue_item_1 = QueueItem(0, "queue item 1", 1, "T", 1, "", "", "", 1, 2, "DONE", 11, 3, "", 0,
@@ -304,7 +310,6 @@ class Queue:
         collect_ids += self.add_to_queue((sample_queue_item_1, ))
         collect_ids += self.add_to_queue((sample_queue_item_2, ))
         collect_ids += self.add_to_queue((sample_queue_item_3, ), do_save=do_save)
-
         self.sample_data_checksum = 6
         self.sample_data_total = 3
         return collect_ids
@@ -315,11 +320,14 @@ class Queue:
         if self.sts.store_data_mode == 2:
             self.load_queue_from_mysql()
 
+    
+    
+    
     def load_queue_from_json(self, json_file=""):
         if len(json_file) == 0:
             json_file = self.sts.store_data_json_directory + self.sts.JSON_QUEUE_FILE_NAME
         if self.comfun.file_exists(json_file, info="queue file"):
-            self.batch.logger.inf(("loading queue items: ", json_file))
+            self.batch.logger.db(("loading queue items: ", json_file))
             json_nodes = self.comfun.load_json_file(json_file)
             if json_nodes is not None and "queueItems" in json_nodes.keys():
                 if json_nodes['queueItems']['meta']['total'] > 0:
@@ -344,6 +352,7 @@ class Queue:
             self.batch.logger.wrn(("queue file doesn't exist: ", json_file))
         return False
 
+
     def load_queue_from_mysql(self):
         # PRO VERSION
         self.batch.logger.inf("MySQL will be supported with the PRO version")
@@ -365,3 +374,32 @@ class Queue:
         # PRO VERSION
         self.batch.logger.inf("MySQL will be supported with the PRO version")
         return None
+
+    
+    
+ 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
