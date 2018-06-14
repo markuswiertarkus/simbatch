@@ -17,6 +17,7 @@ from simbatch.core.tasks import *
 from ui_tasks_form import AddToQueueForm
 
 
+
 class TaskListItem(QWidget):
     def __init__(self, txt_id, txt_schema, txt_user, txt_sequence, txt_shot, txt_take, txt_state, txt_schema_version,
                  txt_queue_version, txt_option, txt_comm):
@@ -87,7 +88,8 @@ class TaskListItem(QWidget):
         self.qt_label_schema_version.setMinimumWidth(28)
         self.qt_label_schema_version.setMaximumWidth(40)
         self.qt_lay.addWidget(self.qt_label_schema_version)
-
+        
+        
         self.qt_label_queue_version = QLabel(txt_queue_version)
         self.qt_label_queue_version.setFont(self.qt_label_font)
         self.qt_label_queue_version.setStyleSheet("""color:#000;""")
@@ -110,8 +112,8 @@ class TaskListItem(QWidget):
         self.qt_lay.addWidget(self.qt_label_prior)
 
         self.setLayout(self.qt_lay)
-
-
+        
+        
 class TasksFormCreateOrEdit(QWidget):
     form_mode = 1  # 1 create    2 edit
     form_task_item = None  # store new or edited data as TaskItem
@@ -145,7 +147,8 @@ class TasksFormCreateOrEdit(QWidget):
     # verQLine = None
     # frStaQLine = None
     # frEndQLine = None
-
+        
+        
     def __init__(self, batch, mainw, mode):
         QWidget.__init__(self)
 
@@ -164,7 +167,9 @@ class TasksFormCreateOrEdit(QWidget):
 
         self.update_schema_names_combo()
         # self.schemas_id_array = batch.sch.schemas_id_array  # TODO  visible isd  VS proj's schemas
-
+        
+        
+        
     def init_ui_elements(self, sch):
         qt_layout_out_form_create = QVBoxLayout()
         qt_layout_form_create = QVBoxLayout()
@@ -220,7 +225,8 @@ class TasksFormCreateOrEdit(QWidget):
         qt_layout_combo_form_create.addLayout(qt_combo_state.qt_widget_layout)
 
         qt_layout_form_create.addLayout(qt_layout_combo_form_create)
-
+        
+    
         qt_layout_form_create.addLayout(qt_widget_group_shot.qt_widget_layout)
         qt_layout_form_create.addLayout(qt_widget_group_time_range.qt_widget_layout)
 
@@ -237,8 +243,9 @@ class TasksFormCreateOrEdit(QWidget):
 
         self.execute_button = qt_button_cb_create_save_task
 
-        self.setLayout(qt_layout_out_form_create)
-
+        self.setLayout(qt_layout_out_form_create)    
+        
+        
     def update_create_ui(self, schema_id=-1):
         self.qt_combo_state_names.setCurrentIndex(1)
         self.batch.logger.deepdb(("update_create_ui qt_schema_name_combo.count():", self.qt_schema_name_combo.count()))
@@ -277,7 +284,8 @@ class TasksFormCreateOrEdit(QWidget):
         self.qt_edit_line_version.setText(str(cur_task.schema_ver))
 
         self.qt_fae_schema_description_edit.setText(cur_task.description)
-
+        
+     
     def update_schemas_id_arr(self, schemas_id_array):  # TODO check is it necessary / remove
         self.schemas_id_array = schemas_id_array
 
@@ -293,7 +301,8 @@ class TasksFormCreateOrEdit(QWidget):
             self.qt_schema_name_combo.addItem(it)
         if combo_current_index is not None:
             self.qt_schema_name_combo.setCurrentIndex(combo_current_index)
-
+            
+       
     def compile_imputs(self):
         self.form_task_item.task_name = self.qt_schema_name_combo.currentText()
         if self.qt_schema_name_combo.currentIndex() >= 0:
@@ -321,8 +330,10 @@ class TasksFormCreateOrEdit(QWidget):
         self.form_task_item.state_id = self.qt_combo_state_names.currentIndex()
 
         self.form_task_item.schema_ver = (self.batch.sch.get_schema_by_id(self.form_task_item.schema_id)).schema_version
-        self.form_task_item.queue_ver = 0
-
+        self.form_task_item.queue_ver = 0     
+        
+        
+        
         self.form_task_item.sequence = self.qt_edit_line_sequence.text()
         self.form_task_item.shot = self.qt_edit_line_shot.text()
         self.form_task_item.take = self.qt_edit_line_take.text()
@@ -348,7 +359,8 @@ class TasksFormCreateOrEdit(QWidget):
         # pa_sh = self.batch.prj.getShPattern(curr_proj.seq_shot_take_pattern)     # TODO
 
         #  TODO get frame range from cache or framerange file.
-
+            
+        
     def get_frame_range_from_scene(self):
         # ret = self.batch.o.soft_conn.get_curent_frame_range()
         ret = None  # TODO   .o.  softwares -> definitions
@@ -365,7 +377,8 @@ class TasksFormCreateOrEdit(QWidget):
     def clear_vars(self):
         self.form_task_item = TaskItem(0, "sample", 1, "NULL", 1, 1, "01", "001", "", 0, 100, 1, 1, 1, "", 1, 50, "")
 
-
+        
+      
 class TasksUI:
     list_tasks = None
     qt_widget_tasks = None
@@ -392,8 +405,10 @@ class TasksUI:
     last_list_item_index = None
 
     freeze_list_on_changed = 0
-    last_task_list_index = None  # used for list item color change to unselected
-
+    last_task_list_index = None  # used for list item color change to unselected  
+        
+        
+       
     def __init__(self, batch, mainw, top):
         self.batch = batch
         self.sts = batch.sts
@@ -423,8 +438,9 @@ class TasksUI:
 
         qt_lay_tasks_list = QHBoxLayout()
         qt_lay_tasks_forms = QVBoxLayout()
-        qt_lay_tasks_buttons = QHBoxLayout()
-
+        qt_lay_tasks_buttons = QHBoxLayout() 
+        
+        
         # CREATE
         # CREATE CREATE
         # CREATE CREATE CREATE
@@ -448,7 +464,8 @@ class TasksUI:
         self.qt_form_remove = qt_form_remove
         qt_form_remove_layout_ext = QVBoxLayout()
         qt_form_remove.setLayout(qt_form_remove_layout_ext)
-
+        
+        
         qt_form_remove_layout = QFormLayout()
 
         wfr_buttons = ButtonWithCheckBoxes("Yes, remove", label_text="Remove selected ?        ")
@@ -475,7 +492,7 @@ class TasksUI:
         self.comfun.add_wigdets(qt_lay_tasks_forms, [qt_form_create, qt_form_edit, qt_form_remove, qt_form_add])
 
         self.hide_all_forms()
-
+        
         qt_button_create_task = QPushButton("Create  ")
         qt_button_edit_task = QPushButton("Edit  ")
         qt_button_remove_task = QPushButton("Remove  ")
@@ -495,7 +512,8 @@ class TasksUI:
         self.comfun.add_layouts(qt_lay_tasks_main, [qt_lay_tasks_list, qt_lay_tasks_forms, qt_lay_tasks_buttons])
 
         self.init_tasks()
-
+        
+        
     def init_tasks(self):
         widget_list = self.list_tasks
         qt_list_item = QListWidgetItem(widget_list)
@@ -527,7 +545,7 @@ class TasksUI:
                 widget_list.setItemWidget(qt_list_item, list_item_widget)
                 qt_list_item.setSizeHint(QSize(130, 26))
                 qt_list_item.setBackground(self.sts.state_colors[tsk.state_id])
-
+        
     def reset_list(self):
         self.freeze_list_on_changed = 1
         index = self.batch.tsk.current_task_index
@@ -559,7 +577,8 @@ class TasksUI:
 
     def on_click_menu_set_hold(self):
         self._change_current_task_state_and_reset_list(self.sts.INDEX_STATE_HOLD)
-
+        
+       
     def on_click_menu_remove(self):
         self.on_click_confirmed_remove_project()
 
@@ -689,6 +708,7 @@ class TasksUI:
             self.qt_form_add.hide()
             self.add_form_state = 0
 
+
     def add_single_task(self, new_task_item):
         new_task_item.id = self.batch.tsk.add_task(new_task_item, do_save=True)
         qt_list_item = QListWidgetItem(self.list_tasks)
@@ -702,7 +722,7 @@ class TasksUI:
         self.list_tasks.addItem(qt_list_item)
         self.list_tasks.setItemWidget(qt_list_item, list_item_widget)
         return new_task_item.id
-
+    
     def on_click_add_task(self, new_task_tem):
         if self.batch.prj.current_project_id >= 0:
             if self.qt_form_create.qt_schema_name_combo.currentIndex() >= 0:
@@ -726,7 +746,8 @@ class TasksUI:
         else:
             self.batch.logger.wrn(("(on_click_add_task) wrong current_project_id: ", self.batch.prj.current_project_id))
             self.top_ui.set_top_info(" [INF] PLEASE SELECT PROJECT !", 8)
-
+            
+            
     def on_click_update_task(self, edited_task_item):
         self.qt_form_edit.compile_imputs()
         self.batch.tsk.update_task(copy.copy(edited_task_item), do_save=True)
@@ -745,7 +766,7 @@ class TasksUI:
         self.qt_form_add.hide()
         self.add_form_state = 0
         self.batch.logger.inf("task updated")
-
+        
     def on_click_confirmed_remove_project(self):
         self.batch.logger.db(("remove_project", self.batch.tsk.current_task_index,
                               self.current_list_item_index))
@@ -767,6 +788,7 @@ class TasksUI:
                 self.batch.logger.deepdb((" is_evo:", ak.is_evo,  "   scr:", ak.script_type, ak.script))
             else:
                 self.batch.logger.deepdb(("not is_evo:", ak.is_evo, "   scr:", ak.script_type, ak.script))
+        
 
     def on_click_add_to_queue(self):    # event from: ui_tasks_form (Add to queue now)
         form_atq = self.qt_form_add
@@ -798,6 +820,7 @@ class TasksUI:
         else:
             self.batch.logger.wrn("Current task undefined! Please select task again.")
             self.top_ui.set_top_info("Please select task ", 7)
+            
 
     def clear_list(self, with_freeze=True):
         if with_freeze:
@@ -817,8 +840,9 @@ class TasksUI:
         for task in self.batch.tsk.tasks_data:
             if task.project_id == self.batch.prj.current_project_id:
                 array_visible_tasks_ids.append(task.id)
-        self.array_visible_tasks_ids = array_visible_tasks_ids
-
+        self.array_visible_tasks_ids = array_visible_tasks_ids  
+        
+ 
     def on_current_item_changed(self, current_task_item):
         if self.freeze_list_on_changed == 1:   # freeze update changes on massive action    i.e  clear_list()
             self.batch.logger.deepdb(("tsk chngd freeze_list_on_changed", self.list_tasks.currentRow()))
@@ -842,6 +866,7 @@ class TasksUI:
                                                                                         len(self.batch.tsk.tasks_data)))
             else:
                 self.batch.logger.db("last_task_list_index is None")
+
 
             if len(self.array_visible_tasks_ids) <= current_list_index:
                 self.update_list_of_visible_ids()  # TODO move  to init / change list
@@ -889,3 +914,12 @@ class TasksUI:
             else:
                 self.batch.logger.err("on chng list task {} < {}".format(current_task_index,
                                                                          len(self.batch.tsk.tasks_data)))
+
+        
+        
+        
+        
+        
+
+        
+
