@@ -23,7 +23,6 @@ class SingleNode:
         self.state_file = state_file
         self.description = description
 
-
 class SimNodes:
     batch = None
     comfun = None
@@ -183,9 +182,44 @@ class SimNodes:
         else:
             self.batch.logger.err(("[ERR] file set state not exist: ", state_file))
 
+
+    def get_server_name_from_file(self, file):
+        if self.comfun.file_exists(file, "get_server_name_from_file" ) :
+            f = open(file, 'r')
+            first_line = f.readline()
+            f.close()
+            if len(first_line) > 0 :
+                li = first_line.split(";")
+                if len(li) > 0:
+                    return li[1]
+                else:
+                    self.batch.logger.wrn(("simnode name missing: ", li))
+                    return ""
+            else :
+                self.batch.logger.wrn(("len(first_line): ", len(first_line)))
+                return ""
+        else:
+            self.batch.logger.err(("setver state file not exist: ", file))
+            return ""
+            
+
 #
 # For network and multi node implementation
 # please ask about PRO version
 #
 #  www.SimBatch.com
 #
+
+
+
+
+
+
+
+
+
+
+
+
+
+
