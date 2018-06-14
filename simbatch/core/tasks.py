@@ -49,9 +49,8 @@ class TaskItem:
         self.user_id = user_id
         self.priority = priority
         self.description = description
-
-
-class Tasks:
+        
+      class Tasks:
     batch = None
     comfun = None
 
@@ -74,7 +73,10 @@ class Tasks:
     @staticmethod
     def get_blank_task():
         return TaskItem(0, "", 1, "NULL", 1, 1, 1, [], "", 0, 0, 0, 0, 1, 0, 0, "", 0, 50, "")
-
+    
+    
+    
+  
     #  print project data, mainly for debug
     def print_current(self):
         print "       current task index:{}, id:{}, total:{}".format(self.current_task_index, self.current_task_id,
@@ -96,7 +98,8 @@ class Tasks:
             print "\n\n {} {}  schema_id:{}  ".format(t.task_name, t.id, t.schema_id)
             print "from:{} to:{}  state:{}  sv:{}  tv:{}  qv:{}".format(t.sim_frame_start, t.sim_frame_end, t.state,
                                                                         t.schema_ver, t.task_ver, t.queue_ver)
-        print "\n\n"
+        print "\n\n" 
+        
 
     def get_index_by_id(self, get_id):
         for i, tsk in enumerate(self.tasks_data):
@@ -117,7 +120,9 @@ class Tasks:
         self.current_task = None
         self.batch.logger.wrn(("no task with ID: ", get_id))
         return None
-
+    
+    
+  
     def update_current_from_index(self, index):
         if len(self.tasks_data) > index >= 0:
             self.current_task_id = self.tasks_data[index].id
@@ -156,7 +161,8 @@ class Tasks:
             else:
                 ret = curr_task.take
         return ret
-
+    
+    
     def get_task_frame_range(self):
         curr_task = self.tasks_data[self.current_task_index]
         return[self.comfun.int_or_val(curr_task.sim_frame_start, 1), self.comfun.int_or_val(curr_task.sim_frame_end, 2)]
@@ -177,7 +183,8 @@ class Tasks:
         self.sample_data_total = 5
         self.save_tasks()
         return collect_ids
-
+    
+    
     def add_task(self, task_item, do_save=False):
         if task_item.id > 0:
             self.max_id = task_item.id
@@ -211,7 +218,9 @@ class Tasks:
                 self.tasks_data[index].state = state
                 break
             index += 1
-
+            
+            
+      
     def remove_single_task(self, index=None, id=None, do_save=False):
         if index is None and id is None:
             return False
@@ -249,7 +258,8 @@ class Tasks:
         # PRO VERSION with sql
         self.batch.logger.inf("MySQL will be supported with the PRO version")
         return False
-
+    
+    
     def clear_all_tasks_data(self, clear_stored_data=False):
         del self.tasks_data[:]
         self.max_id = 0
@@ -275,7 +285,8 @@ class Tasks:
             return self.load_tasks_from_json()
         if self.sts.store_data_mode == 2:
             return self.load_tasks_from_mysql()
-
+        
+        
     def load_tasks_from_json(self, json_file=""):
         if len(json_file) == 0:
             json_file = self.sts.store_data_json_directory + self.sts.JSON_TASKS_FILE_NAME
@@ -304,7 +315,9 @@ class Tasks:
         else:
             self.batch.logger.wrn(("no schema file: ", json_file))
             return False
-
+        
+        
+       
     def load_tasks_from_mysql(self):
         # PRO VERSION
         self.batch.logger.inf("MySQL will be supported with the PRO version")
@@ -336,7 +349,8 @@ class Tasks:
             else:
                 # PRO version with SQL
                 return False
-
+            
+     
     # save tasks data as json
     def save_tasks_to_json(self, json_file=None):
         if json_file is None:
@@ -347,4 +361,19 @@ class Tasks:
     def save_tasks_to_mysql(self):
         # PRO VERSION
         self.batch.logger.inf("MySQL will be supported with the PRO version")
-        return None
+        return None       
+            
+        
+    
+    
+            
+    
+    
+    
+    
+    
+        
+        
+        
+        
+        
